@@ -169,10 +169,8 @@ merged_df <- merge(adf,fordf, by = "carid") # hvorfor kommer der 10 ekstra obs.?
 
 # merge details column
 merged_df <- merged_df[,-5]
-merged_df$details <- gsub("_"," ",merged_df$details)
 
 # merge decription column
-
 # fjerne alle emoji
 emoji_pattern <- "[\U0001F300-\U0001F9FF]|[\\x{2600}-\\x{26FF}]"
 merged_df$description <- merged_df$description %>%
@@ -245,6 +243,8 @@ colnames(merged_df_final)[9] <- "description"
 ########################################
 # visualisering via DKMAP PAKKE - hvor er der flest biler er til salg
 library(mapDK)
+
+merged_df_final_2 <- merged_df_final
 
 kommune_mapping <- c(
   'Nordborg' = 'Sønderborg',
@@ -369,9 +369,9 @@ kommune_mapping <- c(
   'Karlslunde' = 'Greve',
   'Hedehusene' = 'Høje-Taastrup'
 )
-merged_df_final$kommune <- kommune_mapping[merged_df_final$city]
+merged_df_final_2$kommune <- kommune_mapping[merged_df_final_2$city]
 
-city_counts <- merged_df_final %>%
+city_counts <- merged_df_final_2 %>%
   group_by(kommune) %>%
   summarize(
     antal = n(),
@@ -427,6 +427,9 @@ testmdf_final <- cbind(testmdf[, 1:2],
 testmdf_final[, c(4, 5, 8)] <- lapply(testmdf_final[, c(4, 5, 8)], function(x) {
   as.numeric(gsub("[^0-9]", "", as.character(x)))  # Fjern ikke-numeriske tegn
 })
+
+sim_df <- sim_df[, -11]
+testmdf_final <- testmdf_final[, -11]
 
 sim_df <- rbind(sim_df,testmdf_final)
 sim_df$scrape_date <- gsub("2024-11-20", "2024-11-21", sim_df$scrape_date)
@@ -585,7 +588,22 @@ sammenligning_q4 <- round(data.frame(
   gns_kørt_DE = mean(q4df_tysk$kilometerst)
 ), digits = 0)
 
+######################################
+# indlæse nyest data
 
+merged_df_final_2 <- readRDS("~/Documents/da-1s/da1-projekt/Merged_df_final.rds")
+
+bil_11_21 <- anti_join(merged_df_final_2,merged_df_final, by = "carid")
+
+nyebiler <- merged_df_final %>%
+  mutate(solgt = ifelse(carid %in% Retailers$carid, 0, 1))
+
+nyebiler <- nyebiler[,-9]
+
+merged_df_final <- merged_df_final %>%
+  mutate(solgt = ifelse(carid %in% sim_df$carid, 0, 1))
+
+nyebiler$solgt[c(345,397,434,239,194)] <- 1
 
 
 
